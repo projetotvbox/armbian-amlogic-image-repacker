@@ -87,46 +87,63 @@ fi
 
 # --- Rosé Pine (Main) Corrected Theme String ---
 # We ensure no leading/trailing spaces and standard ANSI names.
-ROSE_PINE_THEME="use_shadow = OFF
+THEME="use_shadow = ON
 use_colors = ON
-screen_color = (CYAN,BLACK,OFF)
-dialog_color = (WHITE,BLACK,OFF)
-title_color = (MAGENTA,BLACK,ON)
-border_color = (BLUE,BLACK,OFF)
-button_active_color = (BLACK,YELLOW,ON)
-button_inactive_color = (WHITE,BLACK,OFF)
-tag_color = (YELLOW,BLACK,ON)
-item_color = (WHITE,BLACK,OFF)
-item_selected_color = (BLACK,MAGENTA,ON)"
+screen_color = (MAGENTA,BLACK,OFF)
+dialog_color = (BLACK,WHITE,OFF)
+title_color = (MAGENTA,WHITE,ON)
+border_color = (BLUE,WHITE,OFF)
+button_active_color = (WHITE,YELLOW,ON)
+button_inactive_color = (WHITE,WHITE,OFF)
+tag_color = (YELLOW,WHITE,ON)
+item_selected_color = (WHITE,MAGENTA,ON)"
 
 # --- Improved Dialog Call ---
 # Using 'echo -e' ensures newlines are handled correctly within the substitution
-SELECTION=$(DIALOGRC=<(echo "$ROSE_PINE_THEME") dialog --clear \
-                --backtitle "Armbian Repacker - Rosé Pine Edition" \
+SELECTION=$(DIALOGRC=<(echo "$THEME") dialog --clear \
+                --backtitle "$BACKTITLE" \
                 --title " Image Selection " \
-                --menu "Select an .img file to process:" \
+                --menu "\nSelect an .img file to process:" \
                 15 60 8 \
                 "${OPTIONS[@]}" \
                 3>&1 1>&2 2>&3)
 
 EXIT_STATUS=$?
-clear
-
-# # 4. Display the Dialog menu
-# # We redirect stderr (3) to a variable to capture the user selection
-# SELECTION=$(dialog --clear \
-#                 --backtitle "$BACKTITLE" \
-#                 --title "Image Selection" \
-#                 --menu "Select an .img file to process:" \
-#                 15 50 8 \
-#                 "${OPTIONS[@]}" \
-#                 2>&1 >/dev/tty)x
 
 # 5. Handle the result
 clear
 
+#TODO: LOGAR ISSO
+if [ "$EXIT_STATUS" -ne 0 ]; then
+    echo "Selection cancelled."
+    exit 0
+fi
+
 if [[ -n "$SELECTION" ]]; then
     echo "You selected: $ORIGINAL_IMAGES_DIR/$SELECTION"
+    # Proceed with your sfdisk/manipulation logic here
+else
+    echo "Selection cancelled."
+fi
+
+BOOT_SIZE=$(DIALOGRC=<(echo "$THEME") dialog --clear \
+                --backtitle "$BACKTITLE" \
+                --title " Boot Partition Size " \
+                --menu "\nSelect the desired size for the BOOT partition:" \
+                15 60 8 \
+                "512M" "512 MB (Recommended for most users)" \
+                "256M" "256 MB (Minimum, may cause issues with some devices)" \
+                3>&1 1>&2 2>&3)
+
+EXIT_STATUS=$?
+
+if [ "$EXIT_STATUS" -ne 0 ]; then
+    echo "Selection cancelled."
+    exit 0
+fi
+
+if [[ -n "$BOOT_SIZE" ]]; then
+    echo "You selected BOOT partition size: $BOOT_SIZE"
     # Proceed with your sfdisk/manipulation logic here
 else
     echo "Selection cancelled."
