@@ -95,7 +95,7 @@ title_color = (MAGENTA,WHITE,ON)
 border_color = (BLUE,WHITE,OFF)
 button_active_color = (WHITE,YELLOW,ON)
 button_inactive_color = (WHITE,WHITE,OFF)
-tag_color = (YELLOW,WHITE,ON)
+tag_color = (BLACK,YELLOW,ON)
 item_selected_color = (WHITE,MAGENTA,ON)"
 
 # --- Improved Dialog Call ---
@@ -103,6 +103,8 @@ item_selected_color = (WHITE,MAGENTA,ON)"
 SELECTION=$(DIALOGRC=<(echo "$THEME") dialog --clear \
                 --backtitle "$BACKTITLE" \
                 --title " Image Selection " \
+                --ok-label "Select" \
+                --cancel-label "Cancel" \
                 --menu "\nSelect an .img file to process:" \
                 15 60 8 \
                 "${OPTIONS[@]}" \
@@ -129,8 +131,10 @@ fi
 BOOT_SIZE=$(DIALOGRC=<(echo "$THEME") dialog --clear \
                 --backtitle "$BACKTITLE" \
                 --title " Boot Partition Size " \
+                --ok-label "Accept" \
+                --cancel-label "Cancel" \
                 --menu "\nSelect the desired size for the BOOT partition:" \
-                15 60 8 \
+                15 75 8 \
                 "512M" "512 MB (Recommended for most users)" \
                 "256M" "256 MB (Minimum, may cause issues with some devices)" \
                 3>&1 1>&2 2>&3)
