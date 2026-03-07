@@ -62,24 +62,27 @@ printf "%s\n" "$THEME_CONTENT" > "$THEME"
 INSTALL_SESSION_ID="armbian-amlogic-image-repacker-$$"
 WORK_DIR="/mnt/$INSTALL_SESSION_ID"
 
+MNT_REPACKED_BOOT="$WORK_DIR/repacked-boot"
+MNT_REPACKED_ROOTFS="$WORK_DIR/repacked-rootfs"
+MNT_SOURCE_BOOT="$WORK_DIR/source-boot"
+
 LOOP=""
 LOOP_ORIG=""
 LOOP_DEV=""
 
 cleanup() {
-    mountpoint -q "$WORK_DIR/boot"       && umount "$WORK_DIR/boot"       2>/dev/null
-    mountpoint -q "$WORK_DIR/rootfs"     && umount "$WORK_DIR/rootfs"     2>/dev/null
-    mountpoint -q "$WORK_DIR/image_orig" && umount "$WORK_DIR/image_orig" 2>/dev/null
+    mountpoint -q "$MNT_REPACKED_BOOT"   && umount "$MNT_REPACKED_BOOT"   2>/dev/null
+    mountpoint -q "$MNT_REPACKED_ROOTFS" && umount "$MNT_REPACKED_ROOTFS" 2>/dev/null
+    mountpoint -q "$MNT_SOURCE_BOOT"     && umount "$MNT_SOURCE_BOOT"     2>/dev/null
 
     [ -n "$LOOP"      ] && losetup -d "$LOOP"      2>/dev/null
     [ -n "$LOOP_ORIG" ] && losetup -d "$LOOP_ORIG" 2>/dev/null
     [ -n "$LOOP_DEV"  ] && losetup -d "$LOOP_DEV"  2>/dev/null
 
     rm -rf "$WORK_DIR" 2>/dev/null
-    rm -f  "$THEME"    2>/dev/null
 }
 
-trap cleanup EXIT
+trap 'cleanup; rm -f "$THEME"; clear' EXIT
 
 ORIGINAL_IMAGES_DIR="./original-images"
 REPACKED_IMAGES_DIR="./repacked-images"
@@ -271,28 +274,28 @@ dialog_assert_exit_status "Error: cannot format boot partition."
 mkfs.ext4 -L ROOTFS "${LOOP}p2" > /dev/null 2>&1
 dialog_assert_exit_status "Error: cannot format rootfs partition."
 
-mkdir -p "$WORK_DIR/boot" "$WORK_DIR/rootfs" "$WORK_DIR/image_orig"
+mkdir -p "$MNT_REPACKED_BOOT" "$MNT_REPACKED_ROOTFS" "$MNT_SOURCE_BOOT"
 dialog_assert_exit_status "Error: cannot create working directories."
 
 #TODO: FAZER BOOT SER UM LINK SIMBOLICO
 
-mount "${LOOP}p1" "$WORK_DIR/boot"
+mount "${LOOP}p1" "$MNT_REPACKED_BOOT"
 dialog_assert_exit_status "Error: cannot mount boot partition."
 
-mount "${LOOP}p2" "$WORK_DIR/rootfs"
+mount "${LOOP}p2" "$MNT_REPACKED_ROOTFS"
 dialog_assert_exit_status "Error: cannot mount rootfs partition."
 
-mount "${LOOP_ORIG}p1" "$WORK_DIR/image_orig"
+mount "${LOOP_ORIG}p1" "$MNT_SOURCE_BOOT"
 dialog_assert_exit_status "Error: cannot mount original image boot partition."
 
 dialog_show_wait "Copying boot files. Please wait..."
 
-rsync -rltHL --no-owner --no-group --no-perms "$WORK_DIR/image_orig/boot/" "$WORK_DIR/boot/"
+rsync -rltHL --no-owner --no-group --no-perms "$MNT_SOURCE_BOOT/boot/" "$MNT_REPACKED_BOOT/"
 dialog_assert_exit_status "Error: cannot copy boot files."
 
 dialog_show_wait "Copying rootfs files. Please wait..."
 
-rsync -aAXH "$WORK_DIR/image_orig/" "$WORK_DIR/rootfs/"
+rsync -aAXH "$MNT_SOURCE_BOOT/" "$MNT_REPACKED_ROOTFS/"
 dialog_assert_exit_status "Error: cannot copy rootfs files."
 
 dialog_show_wait "Cleaning up. Please wait..."
