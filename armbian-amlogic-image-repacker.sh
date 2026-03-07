@@ -62,7 +62,24 @@ printf "%s\n" "$THEME_CONTENT" > "$THEME"
 INSTALL_SESSION_ID="armbian-amlogic-image-repacker-$$"
 WORK_DIR="/mnt/$INSTALL_SESSION_ID"
 
-trap 'rm -f "$THEME"; rm -rf "$WORK_DIR"; losetup -D' EXIT
+LOOP=""
+LOOP_ORIG=""
+LOOP_DEV=""
+
+cleanup() {
+    mountpoint -q "$WORK_DIR/boot"       && umount "$WORK_DIR/boot"       2>/dev/null
+    mountpoint -q "$WORK_DIR/rootfs"     && umount "$WORK_DIR/rootfs"     2>/dev/null
+    mountpoint -q "$WORK_DIR/image_orig" && umount "$WORK_DIR/image_orig" 2>/dev/null
+
+    [ -n "$LOOP"      ] && losetup -d "$LOOP"      2>/dev/null
+    [ -n "$LOOP_ORIG" ] && losetup -d "$LOOP_ORIG" 2>/dev/null
+    [ -n "$LOOP_DEV"  ] && losetup -d "$LOOP_DEV"  2>/dev/null
+
+    rm -rf "$WORK_DIR" 2>/dev/null
+    rm -f  "$THEME"    2>/dev/null
+}
+
+trap cleanup EXIT
 
 ORIGINAL_IMAGES_DIR="./original-images"
 REPACKED_IMAGES_DIR="./repacked-images"
@@ -112,7 +129,6 @@ assert_img_fs() {
     local IMG_PATH="$1"
     local EXPECTED_IMG_FSTYPE="$2"
 
-    local LOOP_DEV
     LOOP_DEV=$(losetup -fP --show "$IMG_PATH")
 
     local IMG_FSTYPE
@@ -173,12 +189,14 @@ if [ "$EXIT_STATUS" -ne 0 ]; then
     exit 0
 fi
 
-if [[ -n "$IMAGE" ]]; then
-    echo "You selected: $ORIGINAL_IMAGES_DIR/$IMAGE_NAME"
-    # Proceed with your sfdisk/manipulation logic here
-else
-    echo "Selection cancelled."
-fi
+# if [[ -n "$IMAGE" ]]; then
+#     #Aqui vai vir log
+#     # echo "You selected: $ORIGINAL_IMAGES_DIR/$IMAGE_NAME"
+#     # Proceed with your sfdisk/manipulation logic here
+# else
+#     #Aqui vai vir log
+#     # echo "Selection cancelled."
+# fi
 
 ORIGINAL_IMAGE="$ORIGINAL_IMAGES_DIR/$IMAGE_NAME"
 assert_img_fs "$ORIGINAL_IMAGE" "ext4"
@@ -199,24 +217,27 @@ BOOT_SIZE=$(DIALOGRC="$THEME" dialog \
 
 EXIT_STATUS="$?"
 
+#TODO: LOGAR ISSO
 if [ "$EXIT_STATUS" -ne 0 ]; then
     echo "Selection cancelled."
     exit 0
 fi
 
-if [[ -n "$BOOT_SIZE" ]]; then
-    echo "You selected BOOT partition size: $BOOT_SIZE"
-    # Proceed with your sfdisk/manipulation logic here
-else
-    echo "Selection cancelled."
-fi
+# if [[ -n "$BOOT_SIZE" ]]; then
+#     #Aqui vai vir log
+#     # echo "You selected BOOT partition size: $BOOT_SIZE"
+# else
+#     #Aqui vai vir log
+#     # echo "Selection cancelled."
+# fi
 
 dialog_show_wait "Processing the image. Please wait..."
 
 IMAGE="$REPACKED_IMAGES_DIR/repacked_$IMAGE_NAME"
 
-cp "$ORIGINAL_IMAGE" "$IMAGE"
-dialog_assert_exit_status "Error copying the image file."
+ORIGINAL_SIZE=$(stat -c%s "$ORIGINAL_IMAGE")
+truncate -s "$ORIGINAL_SIZE" "$IMAGE"
+dialog_assert_exit_status "Error creating the image file."
 
 # Cria o particionamento MBR
 parted -s "$IMAGE" mklabel msdos
@@ -244,14 +265,16 @@ LOOP_ORIG=$(losetup -fP --show "$ORIGINAL_IMAGE")
 dialog_assert_exit_status "Error: cannot setup loop device for original image."
 
 # Formata as partições novas
-mkfs.vfat -n BOOT "${LOOP}p1" > /dev/null
+mkfs.vfat -n BOOT "${LOOP}p1" > /dev/null 2>&1
 dialog_assert_exit_status "Error: cannot format boot partition."
 
-mkfs.ext4 -L ROOTFS "${LOOP}p2" > /dev/null
+mkfs.ext4 -L ROOTFS "${LOOP}p2" > /dev/null 2>&1
 dialog_assert_exit_status "Error: cannot format rootfs partition."
 
 mkdir -p "$WORK_DIR/boot" "$WORK_DIR/rootfs" "$WORK_DIR/image_orig"
 dialog_assert_exit_status "Error: cannot create working directories."
+
+#TODO: FAZER BOOT SER UM LINK SIMBOLICO
 
 mount "${LOOP}p1" "$WORK_DIR/boot"
 dialog_assert_exit_status "Error: cannot mount boot partition."
@@ -264,24 +287,17 @@ dialog_assert_exit_status "Error: cannot mount original image boot partition."
 
 dialog_show_wait "Copying boot files. Please wait..."
 
-cp -rL "$WORK_DIR/image_orig/boot/*" "$WORK_DIR/boot/"
+rsync -rltHL --no-owner --no-group --no-perms "$WORK_DIR/image_orig/boot/" "$WORK_DIR/boot/"
 dialog_assert_exit_status "Error: cannot copy boot files."
 
 dialog_show_wait "Copying rootfs files. Please wait..."
 
-cp -a "$WORK_DIR/image_orig/*" "$WORK_DIR/rootfs/"
+rsync -aAXH "$WORK_DIR/image_orig/" "$WORK_DIR/rootfs/"
 dialog_assert_exit_status "Error: cannot copy rootfs files."
 
 dialog_show_wait "Cleaning up. Please wait..."
 
-umount "$WORK_DIR/boot"
-umount "$WORK_DIR/rootfs"
-umount "$WORK_DIR/image_orig"
-
-losetup -d "$LOOP"
-losetup -d "$LOOP_ORIG"
-
-rm -rf "$WORK_DIR"
+cleanup
 
 DIALOGRC="$THEME" dialog \
     --backtitle "$BACKTITLE" \
