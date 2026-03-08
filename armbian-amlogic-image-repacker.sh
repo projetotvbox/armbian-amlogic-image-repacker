@@ -146,8 +146,11 @@ assert_img_fs() {
 }
 
 if [ ! -d "$ORIGINAL_IMAGES_DIR" ]; then
-    echo "Error: Original images directory '$ORIGINAL_IMAGES_DIR' not found."
-    exit 1
+
+    mkdir -p "$ORIGINAL_IMAGES_DIR"
+
+    dialog_throw_error "The directory '$ORIGINAL_IMAGES_DIR' did not exist and was created.\nPlease add your Armbian .img files to it and run the script again."
+
 fi
 
 if [ ! -d "$REPACKED_IMAGES_DIR" ]; then
