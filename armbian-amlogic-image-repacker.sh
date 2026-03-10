@@ -16,7 +16,7 @@ for pkg in "${DEPENDENCIES[@]}"; do
     if ! dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "install ok installed"; then
 
         echo "Dependency missing: $pkg"
-        
+
         MISSING_PKGS+=("$pkg")
 
     fi
@@ -59,7 +59,7 @@ item_selected_color = (WHITE,MAGENTA,ON)"
 
 THEME=$(mktemp)
 
-printf "%s\n" "$THEME_CONTENT" > "$THEME"
+printf "%s\n" "$THEME_CONTENT" >"$THEME"
 
 INSTALL_SESSION_ID="armbian-amlogic-image-repacker-$$"
 WORK_DIR="/mnt/$INSTALL_SESSION_ID"
@@ -73,13 +73,13 @@ LOOP_ORIG=""
 LOOP_DEV=""
 
 cleanup() {
-    mountpoint -q "$MNT_REPACKED_BOOT"   && umount "$MNT_REPACKED_BOOT"   2>/dev/null
+    mountpoint -q "$MNT_REPACKED_BOOT" && umount "$MNT_REPACKED_BOOT" 2>/dev/null
     mountpoint -q "$MNT_REPACKED_ROOTFS" && umount "$MNT_REPACKED_ROOTFS" 2>/dev/null
-    mountpoint -q "$MNT_SOURCE_BOOT"     && umount "$MNT_SOURCE_BOOT"     2>/dev/null
+    mountpoint -q "$MNT_SOURCE_BOOT" && umount "$MNT_SOURCE_BOOT" 2>/dev/null
 
-    [ -n "$LOOP"      ] && losetup -d "$LOOP"      2>/dev/null
+    [ -n "$LOOP" ] && losetup -d "$LOOP" 2>/dev/null
     [ -n "$LOOP_ORIG" ] && losetup -d "$LOOP_ORIG" 2>/dev/null
-    [ -n "$LOOP_DEV"  ] && losetup -d "$LOOP_DEV"  2>/dev/null
+    [ -n "$LOOP_DEV" ] && losetup -d "$LOOP_DEV" 2>/dev/null
 
     rm -rf "$WORK_DIR" 2>/dev/null
 }
@@ -94,20 +94,20 @@ BACKTITLE="Armbian Amlogic Image Repacker - UNOFFICIAL SCRIPT - by Fábio Haruo 
 dialog_throw_error() {
 
     ERROR_MSG="$1"
-    
+
     DIALOGRC="$THEME" dialog \
         --backtitle "$BACKTITLE" \
         --title "Error" \
         --ok-label "OK" \
         --msgbox "\n$ERROR_MSG" \
         10 60
-    
+
     exit 1
 
 }
 
 dialog_assert_exit_status() {
-    
+
     ERROR_MSG="$1"
     EXIT_STATUS="$?"
 
@@ -118,19 +118,18 @@ dialog_assert_exit_status() {
 }
 
 dialog_show_wait() {
-    
+
     MESSAGE="$1"
-    
+
     DIALOGRC="$THEME" dialog \
         --backtitle "$BACKTITLE" \
         --title "Please Wait" \
         --infobox "\n$MESSAGE" \
         5 60
-
 }
 
 assert_img_fs() {
-    
+
     local IMG_PATH="$1"
     local EXPECTED_IMG_FSTYPE="$2"
 
@@ -144,7 +143,7 @@ assert_img_fs() {
     if [ "$IMG_FSTYPE" != "$EXPECTED_IMG_FSTYPE" ]; then
         dialog_throw_error "Error: expected filesystem '$EXPECTED_IMG_FSTYPE' on first partition but found '${IMG_FSTYPE:-none}'."
     fi
-    
+
 }
 
 if [ ! -d "$ORIGINAL_IMAGES_DIR" ]; then
@@ -180,14 +179,14 @@ fi
 # --- Improved Dialog Call ---
 # Using 'echo -e' ensures newlines are handled correctly within the substitution
 IMAGE_NAME=$(DIALOGRC="$THEME" dialog \
-                --backtitle "$BACKTITLE" \
-                --title "Image Selection" \
-                --ok-label "Select" \
-                --cancel-label "Cancel" \
-                --menu "\nSelect an .img file to process:" \
-                15 60 8 \
-                "${OPTIONS[@]}" \
-                3>&1 1>&2 2>&3)
+    --backtitle "$BACKTITLE" \
+    --title "Image Selection" \
+    --ok-label "Select" \
+    --cancel-label "Cancel" \
+    --menu "\nSelect an .img file to process:" \
+    15 60 8 \
+    "${OPTIONS[@]}" \
+    3>&1 1>&2 2>&3)
 
 EXIT_STATUS="$?"
 
@@ -213,15 +212,15 @@ assert_img_fs "$ORIGINAL_IMAGE" "ext4"
 # If it fails, we will show an error message and exit
 
 BOOT_SIZE=$(DIALOGRC="$THEME" dialog \
-                --backtitle "$BACKTITLE" \
-                --title "Boot Partition Size" \
-                --ok-label "Accept" \
-                --cancel-label "Cancel" \
-                --menu "\nSelect the desired size for the BOOT partition:" \
-                15 75 8 \
-                "512MiB" "512 MB (Recommended for most users)" \
-                "256MiB" "256 MB (Minimum, may cause issues with some devices)" \
-                3>&1 1>&2 2>&3)
+    --backtitle "$BACKTITLE" \
+    --title "Boot Partition Size" \
+    --ok-label "Accept" \
+    --cancel-label "Cancel" \
+    --menu "\nSelect the desired size for the BOOT partition:" \
+    15 75 8 \
+    "512MiB" "512 MB (Recommended for most users)" \
+    "256MiB" "256 MB (Minimum, may cause issues with some devices)" \
+    3>&1 1>&2 2>&3)
 
 EXIT_STATUS="$?"
 
@@ -273,10 +272,10 @@ LOOP_ORIG=$(losetup -fP --show "$ORIGINAL_IMAGE")
 dialog_assert_exit_status "Error: cannot setup loop device for original image."
 
 # Formata as partições novas
-mkfs.vfat -n BOOT "${LOOP}p1" > /dev/null 2>&1
+mkfs.vfat -n BOOT "${LOOP}p1" >/dev/null 2>&1
 dialog_assert_exit_status "Error: cannot format boot partition."
 
-mkfs.ext4 -L ROOTFS "${LOOP}p2" > /dev/null 2>&1
+mkfs.ext4 -L ROOTFS "${LOOP}p2" >/dev/null 2>&1
 dialog_assert_exit_status "Error: cannot format rootfs partition."
 
 mkdir -p "$MNT_REPACKED_BOOT" "$MNT_REPACKED_ROOTFS" "$MNT_SOURCE_BOOT"
