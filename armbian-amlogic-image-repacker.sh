@@ -126,6 +126,7 @@ dialog_show_wait() {
         --title "Please Wait" \
         --infobox "\n$MESSAGE" \
         5 60
+
 }
 
 assert_img_fs() {
@@ -301,6 +302,54 @@ dialog_show_wait "Copying rootfs files. Please wait..."
 
 rsync -aAXH "$MNT_SOURCE_BOOT/" "$MNT_REPACKED_ROOTFS/"
 dialog_assert_exit_status "Error: cannot copy rootfs files."
+
+rm -rf "${MNT_REPACKED_ROOTFS:?}/boot/"*
+
+dialog_show_wait "Adjusting armbianEnv.txt. Please wait..."
+
+NEW_UUID_BOOT=$(blkid -s UUID -o value "$LOOP"p1)
+NEW_UUID_ROOT=$(blkid -s UUID -o value "$LOOP"p2)
+
+# TODO: Lembrar de fazer verificação aqui depois
+
+ARMBIAN_ENV_FILE="$MNT_REPACKED_BOOT/armbianEnv.txt"
+
+if [ -f "$ARMBIAN_ENV_FILE" ]; then
+
+    cp "$ARMBIAN_ENV_FILE" "$MNT_REPACKED_BOOT/armbianEnv.txt.bak"
+
+    sed -i '/^[[:space:]]*#*[[:space:]]*rootdev/d' "$ARMBIAN_ENV_FILE"
+
+    echo "rootdev=UUID=$NEW_UUID_ROOT" >>"$ARMBIAN_ENV_FILE"
+
+else
+
+    echo "else"
+
+    # TODO: LEMBRAR DO WARNING AQUI DEPOIS
+
+fi
+
+FSTAB_FILE="${MNT_REPACKED_ROOTFS:?}/etc/fstab"
+
+if [ -f "$FSTAB_FILE" ]; then
+
+    cp "$FSTAB_FILE" "$FSTAB_FILE".bak
+
+    echo "# <file system> <mount point> <type> <options> <dump> <pass>" >"$FSTAB_FILE"
+    {
+        echo "tmpfs /tmp tmpfs defaults, nosuid 0 0"
+        echo "UUID=$NEW_UUID_ROOT / ext4 defaults,noatime,commit=600,errors=remount-ro 0 1"
+        echo "UUID=$NEW_UUID_BOOT /boot vfat defaults,noatime,umask=0077 0 2"
+    } >>"$FSTAB_FILE"
+
+else
+
+    echo ""
+
+    # TODO: LEMBRAR DE UM WARNING AQUI DEPOIS
+
+fi
 
 dialog_show_wait "Cleaning up. Please wait..."
 
