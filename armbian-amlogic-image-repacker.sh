@@ -744,7 +744,7 @@ fi
 
 log_section "FSTAB CONFIGURATION"
 
-if [ -n "$NEW_UUID_BOOT" && -n "$NEW_UUID_ROOT" ]; then
+if [ -n "$NEW_UUID_BOOT" ] && [ -n "$NEW_UUID_ROOT" ]; then
     log_info "FSTAB" "Both UUIDs available, updating fstab"
 
     FSTAB_FILE="${MNT_REPACKED_ROOTFS:?}/etc/fstab"
