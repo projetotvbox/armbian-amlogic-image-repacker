@@ -76,13 +76,10 @@ log_message() {
     
     local LOG_LINE="[$TIMESTAMP] [$LEVEL] [$COMPONENT] $MESSAGE"
     
-    # Write to log file (only if log file exists)
+    # Write to log file only (silent mode for TUI)
     if [ -f "$LOG_FILE" ]; then
         echo "$LOG_LINE" >> "$LOG_FILE"
     fi
-    
-    # Write to terminal with color
-    echo -e "${COLOR}${LOG_LINE}${COLOR_RESET}" >&2
 }
 
 # Level-specific logging functions
@@ -813,7 +810,7 @@ log_info "LOG_SYSTEM" "Detailed log saved to: $LOG_FILE"
 
 DIALOGRC="$THEME" dialog \
     --backtitle "$BACKTITLE" \
-    --title "✓ Success" \
+    --title "Success" \
     --ok-label "OK" \
     --msgbox "\n\nImage repacked successfully!\n\nOutput file:\n$IMAGE\n\nBoot UUID: ${NEW_UUID_BOOT:-N/A}\nRoot UUID: ${NEW_UUID_ROOT:-N/A}" \
     12 70
