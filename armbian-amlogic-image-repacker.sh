@@ -812,7 +812,7 @@ DIALOGRC="$THEME" dialog \
     --backtitle "$BACKTITLE" \
     --title "Success" \
     --ok-label "OK" \
-    --msgbox "\n\nImage repacked successfully!\n\nOutput file:\n$IMAGE\n\nBoot UUID: ${NEW_UUID_BOOT:-N/A}\nRoot UUID: ${NEW_UUID_ROOT:-N/A}" \
+    --msgbox "\nImage repacked successfully!\n\nOutput file:\n$IMAGE\n\nBoot UUID: ${NEW_UUID_BOOT:-N/A}\nRoot UUID: ${NEW_UUID_ROOT:-N/A}" \
     12 70
 
 exit 0
