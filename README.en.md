@@ -14,6 +14,8 @@ An interactive script to repack Armbian images from single-partition (ext4) to t
 
 **Project:** Developed for the [Projeto TVBox](https://github.com/projetotvbox) at the **Instituto Federal de São Paulo (IFSP)**, Campus Salto
 
+> ⚠️ **Warning:** Repacking the image **makes the default Armbian installer incompatible** with the new partition layout. To install Armbian on AMLogic devices from a repacked image, use the installer developed specifically for this purpose: [projetotvbox/armbian-install-amlogic](https://github.com/projetotvbox/armbian-install-amlogic)
+
 ---
 
 ## 📑 Table of Contents
@@ -200,6 +202,14 @@ sudo bash armbian-amlogic-image-repacker.sh
 10. **Finalization** — unmounts everything, removes temporary files, and displays the result
 
 The repacked image is saved to `repacked-images/repacked_<original-name>.img`.
+
+### ⚠️ Compatibility with the Armbian Installer
+
+Repacking changes the partition layout of the image, which **makes the default Armbian installer incompatible** with the resulting image. The official installer assumes a single-partition format (ext4), and upon encountering the new dual-partition layout (FAT32 + ext4), it will either fail or produce an incorrect installation.
+
+To install Armbian on AMLogic devices from a repacked image, Projeto TVBox developed a dedicated installer, adapted for this layout:
+
+> 📦 **[projetotvbox/armbian-install-amlogic](https://github.com/projetotvbox/armbian-install-amlogic)**
 
 ---
 
