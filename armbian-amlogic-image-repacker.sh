@@ -466,7 +466,7 @@ IMAGE_NAME=$(DIALOGRC="$THEME" dialog \
     --ok-label "Select" \
     --cancel-label "Cancel" \
     --menu "\nSelect an .img file to process:" \
-    15 60 8 \
+    15 80 8 \
     "${OPTIONS[@]}" \
     3>&1 1>&2 2>&3)
 
