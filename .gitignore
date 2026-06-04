@@ -1,5 +1,5 @@
-1converte_btv.sh
-
-original-images/
-repacked-images/
+original-images/*
+!original-images/.gitkeep
+repacked-images/*
+!repacked-images/.gitkeep
 logs/
