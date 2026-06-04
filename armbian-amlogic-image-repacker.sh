@@ -729,7 +729,7 @@ if [ -n "$NEW_UUID_BOOT" ] && [ -n "$NEW_UUID_ROOT" ]; then
         log_info "FSTAB" "Writing new fstab with updated UUIDs"
         echo "# <file system> <mount point> <type> <options> <dump> <pass>" >"$FSTAB_FILE"
         {
-            echo "tmpfs /tmp tmpfs defaults, nosuid 0 0"
+            echo "tmpfs /tmp tmpfs defaults,nosuid 0 0"
             echo "UUID=$NEW_UUID_ROOT / ext4 defaults,noatime,commit=600,errors=remount-ro 0 1"
             echo "UUID=$NEW_UUID_BOOT /boot vfat defaults,noatime,umask=0077 0 2"
         } >>"$FSTAB_FILE"
