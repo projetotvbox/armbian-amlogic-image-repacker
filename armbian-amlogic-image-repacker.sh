@@ -28,7 +28,8 @@ log_init() {
     mkdir -p "$LOG_DIR"
     
     # Keep only the 10 most recent log files
-    local LOG_COUNT=$(find "$LOG_DIR" -name "armbian-repacker_*.log" -type f 2>/dev/null | wc -l)
+    local LOG_COUNT
+    LOG_COUNT=$(find "$LOG_DIR" -name "armbian-repacker_*.log" -type f 2>/dev/null | wc -l)
     if [ "$LOG_COUNT" -ge 10 ]; then
         # Remove oldest logs, keeping only 9 (so the new one makes 10)
         find "$LOG_DIR" -name "armbian-repacker_*.log" -type f -printf '%T+ %p\n' 2>/dev/null | \
@@ -201,7 +202,11 @@ log_var "DEPENDENCIES" "MISSING_COUNT" "${#MISSING_PKGS[@]}"
 
 if [ ${#MISSING_PKGS[@]} -ne 0 ]; then
     log_error "DEPENDENCIES" "Missing binaries: ${MISSING_PKGS[*]}"
-    dialog_throw_error "Missing required binaries:\n\n$(printf '  - %s\n' "${MISSING_PKGS[@]}")\n\nPlease install them and try again."
+    echo "ERROR: Missing required binaries:"
+    printf '  - %s\n' "${MISSING_PKGS[@]}"
+    echo ""
+    echo "Please install them and try again."
+    exit 1
 fi
 
 log_success "DEPENDENCIES" "All required binaries are available"
@@ -355,6 +360,7 @@ assert_img_fs() {
     log_var "VALIDATE" "EXPECTED_FSTYPE" "$EXPECTED_IMG_FSTYPE"
     
     log_cmd "VALIDATE" "losetup -fP --show $IMG_PATH"
+    local LOOP_DEV
     LOOP_DEV=$(losetup -fP --show "$IMG_PATH")
     log_var "VALIDATE" "LOOP_DEV" "$LOOP_DEV"
 
