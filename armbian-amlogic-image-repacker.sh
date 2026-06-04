@@ -178,64 +178,33 @@ log_init
 log_section "DEPENDENCY CHECK"
 
 # list of packages we rely on; use array so we can quote safely later
-DEPENDENCIES=(pv parted dialog dosfstools rsync)
+DEPENDENCIES=(pv parted dialog mkfs.vfat mkfs.ext4 rsync blkid losetup)
 MISSING_PKGS=()
 
 log_array "DEPENDENCIES" "DEPENDENCIES" "${DEPENDENCIES[@]}"
-log_info "DEPENDENCIES" "Starting dependency verification for ${#DEPENDENCIES[@]} packages"
+log_info "DEPENDENCIES" "Starting dependency verification for ${#DEPENDENCIES[@]} binaries"
 
 echo "Checking dependencies..."
 
-# TODO: Update to run on mostly package managers (pacman, apt, etc.)
+for bin in "${DEPENDENCIES[@]}"; do
+    log_debug "DEPENDENCIES" "Checking binary: $bin"
 
-for pkg in "${DEPENDENCIES[@]}"; do
-    log_debug "DEPENDENCIES" "Checking package: $pkg"
-
-    if ! dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "install ok installed"; then
-        log_warning "DEPENDENCIES" "Dependency missing: $pkg"
-        echo "Dependency missing: $pkg"
-
-        MISSING_PKGS+=("$pkg")
-
+    if ! command -v "$bin" >/dev/null 2>&1; then
+        log_warning "DEPENDENCIES" "Missing binary: $bin"
+        MISSING_PKGS+=("$bin")
     else
-        log_success "DEPENDENCIES" "Package '$pkg' is installed"
+        log_success "DEPENDENCIES" "Binary '$bin' found: $(command -v "$bin")"
     fi
-
 done
 
-log_var "DEPENDENCIES" "MISSING_PKGS_COUNT" "${#MISSING_PKGS[@]}"
+log_var "DEPENDENCIES" "MISSING_COUNT" "${#MISSING_PKGS[@]}"
 
 if [ ${#MISSING_PKGS[@]} -ne 0 ]; then
-    log_warning "DEPENDENCIES" "Missing ${#MISSING_PKGS[@]} package(s), starting installation"
-    log_array "DEPENDENCIES" "MISSING_PKGS" "${MISSING_PKGS[@]}"
-
-    echo "Installing missing dependencies: ${MISSING_PKGS[*]}"
-
-    log_cmd "DEPENDENCIES" "apt-get update"
-    apt-get update
-
-    # expand array unquoted so each element is a separate argument
-    log_cmd "DEPENDENCIES" "apt-get install -y ${MISSING_PKGS[*]}"
-    apt-get install -y "${MISSING_PKGS[@]}"
-
-    if [ $? -ne 0 ]; then
-        log_error "DEPENDENCIES" "CRITICAL: Failed to install dependencies"
-        log_error "DEPENDENCIES" "Installation exit code: $?"
-        log_array "DEPENDENCIES" "FAILED_PACKAGES" "${MISSING_PKGS[@]}"
-
-        echo "CRITICAL ERROR: Failed to install dependencies (${MISSING_PKGS[*]})."
-
-        echo "Please check your internet connection."
-
-        exit 1
-
-    else
-        log_success "DEPENDENCIES" "All missing dependencies installed successfully"
-    fi
-
-else
-    log_success "DEPENDENCIES" "All required dependencies are already installed"
+    log_error "DEPENDENCIES" "Missing binaries: ${MISSING_PKGS[*]}"
+    dialog_throw_error "Missing required binaries:\n\n$(printf '  - %s\n' "${MISSING_PKGS[@]}")\n\nPlease install them and try again."
 fi
+
+log_success "DEPENDENCIES" "All required binaries are available"
 
 log_section "THEME CONFIGURATION"
 
@@ -666,7 +635,7 @@ dialog_show_wait "Copying boot files. This may take a few minutes..."
 log_info "COPY" "Copying boot files from source to repacked boot partition"
 log_debug "COPY" "Source: $MNT_SOURCE_BOOT/boot/"
 log_debug "COPY" "Destination: $MNT_REPACKED_BOOT/"
-log_cmd "COPY" "rsync -rltHL --no-owner --no-group --no-perms $MNT_SOURCE_BOOT/boot/ $MNT_REPACKED_BOOT/"
+log_cmd "COPY" "rsync -rtHL --no-owner --no-group --no-perms $MNT_SOURCE_BOOT/boot/ $MNT_REPACKED_BOOT/"
 rsync -rltHL --no-owner --no-group --no-perms "$MNT_SOURCE_BOOT/boot/" "$MNT_REPACKED_BOOT/"
 dialog_assert_exit_status "Error: cannot copy boot files."
 log_success "COPY" "Boot files copied successfully"
